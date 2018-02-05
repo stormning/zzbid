@@ -68,7 +68,8 @@ public class BidService {
             if (html.indexOf("正在投标") > 0) {
                 //parse again to avoid id mixed with html
                 String id = Jsoup.parse(element.child(0).text()).text();
-                if (bidRepository.findOne(id) == null) {
+                Bid exist = bidRepository.findOne(id);
+                if (exist == null) {
                     String bidInfoUrl = element.select("td:last-child a:last-child").get(0).absUrl("href");
                     log.info("Url for bid : {}", bidInfoUrl);
                     Bid bid = new Bid();
@@ -82,6 +83,8 @@ public class BidService {
                     bid.setBudget(element.child(5).text());
                     bidRepository.save(bid);
                     doBid(sessionId, bid);
+                } else if (exist.getBidTime() <= 0) {
+                    doBid(sessionId, exist);
                 }
             }
         });
@@ -94,22 +97,26 @@ public class BidService {
 
     @Async
     public void doBid(String sessionId, Bid bid) {
-        ///http://st.zzint.com/pur!addBid.action?packageId
-        Config config = getConfig();
-        Map<String, String> data = Maps.newHashMap();
-        data.put("packageId", bid.getRealPkgId());
-        Document document = crawlerService.fetchDocument(sessionId, addBidUrl, HttpMethod.POST, null, data);
-        Element bidTable = document.select("tr:eq(1)").first().select("table").first();
+        try {
+            ///http://st.zzint.com/pur!addBid.action?packageId
+            Config config = getConfig();
+            Map<String, String> data = Maps.newHashMap();
+            data.put("packageId", bid.getRealPkgId());
+            Document document = crawlerService.fetchDocument(sessionId, addBidUrl, HttpMethod.POST, null, data);
+            Element bidTable = document.select("tr:eq(1)").first().select("table").first();
 
-        Map<String, String> bidData = Maps.newHashMap();
-        //itemIds, bidPrice,returncodetijiao,packageId
-        bidData.put("itemIds", bidTable.selectFirst("#itemIds").val());
-        bidData.put("bidPrice", config.getMoney().toString());
-        bidData.put("returncodetijiao", bidTable.selectFirst("font").text());
-        bidData.put("packageId", bid.getRealPkgId());
-        crawlerService.fetchDocument(sessionId, saveBidUrl, HttpMethod.POST, null, bidData);
-        bid.setBidTime(System.currentTimeMillis());
-        bidRepository.save(bid);
+            Map<String, String> bidData = Maps.newHashMap();
+            //itemIds, bidPrice,returncodetijiao,packageId
+            bidData.put("itemIds", bidTable.selectFirst("#itemIds").val());
+            bidData.put("bidPrice", config.getMoney().toString());
+            bidData.put("returncodetijiao", bidTable.selectFirst("font").text());
+            bidData.put("packageId", bid.getRealPkgId());
+            crawlerService.fetchDocument(sessionId, saveBidUrl, HttpMethod.POST, null, bidData);
+            bid.setBidTime(System.currentTimeMillis());
+            bidRepository.save(bid);
+        } catch (Exception e){
+            log.error("Exception occurred:",e);
+        }
     }
 
     private String text(Element element, String selector) {

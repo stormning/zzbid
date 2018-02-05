@@ -42,5 +42,5 @@ public class Bid {
     private String budget;
 
     //自动投标时间
-    private long bidTime;
+    private long bidTime = 0;
 }

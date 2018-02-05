@@ -4,6 +4,7 @@ import com.slyak.zzbid.model.Config;
 import com.slyak.zzbid.service.BidService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -27,7 +28,7 @@ public class IndexController {
     }
 
     @RequestMapping("/")
-    public String index(Pageable pageable, ModelMap modelMap) {
+    public String index(@PageableDefault(value = 20, sort = {"id"}, direction = Sort.Direction.DESC) Pageable pageable, ModelMap modelMap) {
         modelMap.put("page", bidService.findAll(pageable));
         return "index";
     }
