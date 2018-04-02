@@ -3,8 +3,8 @@
 ``` bash
 mkdir /opt/tesseract \
 	&& cd /opt/tesseract \
-	&& wget https://raw.githubusercontent.com/stormning/zzbid/master/entrypoint.sh \
-	&& chmod +x /opt/tesseract/entrypoint.sh
+	&& wget https://raw.githubusercontent.com/stormning/zzbid/master/docker-entrypoint.sh \
+	&& chmod +x /opt/tesseract/docker-entrypoint.sh
 ```
 
 ### 运行docker镜像
