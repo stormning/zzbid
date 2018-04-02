@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 export TESSDATA_PREFIX=/usr/local/share
 GIT_URL=git@github.com:stormning/zzbid.git
-ZZBID_SRC=/opt/zzbid-src
+ZZBID_SRC=/opt/zzbid/source
 if [[ -d $ZZBID_SRC ]];then
     mkdir $ZZBID_SRC
     cd $ZZBID_SRC
