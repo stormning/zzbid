@@ -38,7 +38,7 @@ public class SchedulerConfig implements SchedulingConfigurer {
             Calendar next = new GregorianCalendar();
             Date last = triggerContext.lastActualExecutionTime();
             next.setTime(last == null ? new Date() : last);
-            next.add(Calendar.SECOND, config.getInterval());
+            next.add(Calendar.MILLISECOND, config.getInterval()*500);
             log.info("Next task start will start at : {}", next);
             return next.getTime();
         }));
