@@ -42,7 +42,7 @@
         <#nested />
     </main>
 </div>
-<div class="modal" tabindex="-1" role="dialog" id="captchaDialog">
+<#--<div class="modal" tabindex="-1" role="dialog" id="captchaDialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -97,7 +97,7 @@
         checkSession();
         window.setInterval(checkSession, 5000);
         </#if>
-</script>
+</script>-->
 </body>
 </html>
 </#macro>

@@ -32,7 +32,7 @@ public class SchedulerConfig implements SchedulingConfigurer {
     public void configureTasks(ScheduledTaskRegistrar scheduledTaskRegistrar) {
         scheduledTaskRegistrar.addTriggerTask(new TriggerTask(() -> {
             Config config = bidService.getConfig();
-            if (config.isStart() && bidService.isLogin()) bidService.autoBid();
+            if (config.canStart()) bidService.autoBid();
         }, triggerContext -> {
             Config config = bidService.getConfig();
             Calendar next = new GregorianCalendar();

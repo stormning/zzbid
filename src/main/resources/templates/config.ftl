@@ -39,6 +39,14 @@
         </div>
     </div>
     <div class="form-group row">
+        <label for="retry" class="col-sm-2 col-form-label">自动投标时间段</label>
+        <div class="col-sm-6">
+            <div class="form-control-plaintext">
+                <input id="retry" type="text" class="form-control validate[custom[condition]]" placeholder="格式08:45-09:20" name="condition" value="${config.condition}">
+            </div>
+        </div>
+    </div>
+    <div class="form-group row">
         <label for="retry" class="col-sm-2 col-form-label">自动投标开关</label>
         <div class="col-sm-6">
             <div class="form-control-plaintext">
@@ -50,6 +58,10 @@
 </form>
 <script>
     $(function () {
+        $.validationEngineLanguage.allRules.condition = {
+            "regex":/^(([0-1]\d|2[0-3]):[0-5]\d)-(([0-1]\d|2[0-3]):[0-5]\d)$/,
+            'alertText': '格式08:45-09:20'
+        };
         $('#configForm').validationEngine('attach', {
             promptPosition: 'centerRight',
             scroll: false

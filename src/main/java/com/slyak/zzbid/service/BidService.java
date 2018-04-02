@@ -7,7 +7,10 @@ import com.slyak.zzbid.model.Config;
 import com.slyak.zzbid.repository.BidRepository;
 import com.slyak.zzbid.repository.ConfigRepository;
 import com.slyak.zzbid.util.Constants;
+import com.slyak.zzbid.util.OcrUtils;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import net.sourceforge.tess4j.TesseractException;
 import org.apache.commons.lang.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -19,6 +22,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +60,7 @@ public class BidService {
     private static final String logoutUrl = "http://st.zzint.com/loginOut!exit.action";
 
     public void autoBid() {
+        loginCheck();
         //http://st.zzint.com/pur!queryBidList.action
         ///pur!showBid.action?packageId=2378
         ///pur!addBid.action
@@ -88,11 +93,15 @@ public class BidService {
                 }
             }
         });
-        //获取列表
-        //获取未投标列表
-        //生成投标参数，获取验证码
-        //提交投标
-//        crawlerService.fetchDocument(sessionId, "", HttpMethod.GET, null, null);
+    }
+
+    @SneakyThrows
+    private void loginCheck() {
+        if (!isLogin()) {
+            String sessionId = nextSessionId();
+            byte[] captcha = getCaptcha(sessionId);
+            login(sessionId, OcrUtils.doOcr(captcha));
+        }
     }
 
     @Async
@@ -109,15 +118,24 @@ public class BidService {
             //itemIds, bidPrice,returncodetijiao,packageId
             bidData.put("itemIds", bidTable.selectFirst("#itemIds").val());
             bidData.put("bidPrice", config.getMoney().toString());
-            bidData.put("returncodetijiao", bidTable.selectFirst("font").text());
             bidData.put("packageId", bid.getRealPkgId());
-            crawlerService.fetchDocument(sessionId, saveBidUrl, HttpMethod.POST, null, bidData);
+
+            doBidUntilSuccess(sessionId, bidData);
             bid.setBidTime(System.currentTimeMillis());
             bidRepository.save(bid);
-        } catch (Exception e){
-            log.error("Exception occurred:",e);
+        } catch (Exception e) {
+            log.error("Exception occurred:", e);
         }
     }
+
+    private void doBidUntilSuccess(String sessionId, Map<String, String> bidData) throws IOException, TesseractException {
+        bidData.put("returncodetijiao", OcrUtils.doOcr(getCaptcha(sessionId)));
+        Document document = crawlerService.fetchDocument(sessionId, saveBidUrl, HttpMethod.POST, null, bidData);
+        if (document.toString().contains("验证码错误")) {
+            doBidUntilSuccess(sessionId, bidData);
+        }
+    }
+
 
     private String text(Element element, String selector) {
         return StringUtils.trim(element.select(selector).text());
