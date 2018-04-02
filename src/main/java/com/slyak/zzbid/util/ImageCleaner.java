@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * .
@@ -15,7 +16,11 @@ import java.io.IOException;
 public class ImageCleaner {
 
     public static BufferedImage cleanImage(byte[] bytes) throws IOException {
-        BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
+        return cleanImage(new ByteArrayInputStream(bytes));
+    }
+
+    public static BufferedImage cleanImage(InputStream is) throws IOException {
+        BufferedImage img = ImageIO.read(is);
         int width = img.getWidth();
         int height = img.getHeight();
         for (int x = 0; x < width; x++) {
