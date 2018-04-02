@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 export TESSDATA_PREFIX=/usr/local/share
 GIT_URL=git@github.com:stormning/zzbid.git
-if [ -d "./zzbid" ];then
-    mkdir ./zzbid
-    cd ./zzbid
+ZZBID_SRC=/opt/zzbid-src
+if [[ -d $ZZBID_SRC ]];then
+    mkdir $ZZBID_SRC
+    cd $ZZBID_SRC
     git clone $GIT_URL .
     git remote add origin $GIT_URL
     else
-    cd ./zzbid
+    cd $ZZBID_SRC
     git reset --hard origin/master
 fi
-./mvnw clean install
-./mvnw spring-boot:run
+$ZZBID_SRC/mvnw clean install
+$ZZBID_SRC/mvnw spring-boot:run
