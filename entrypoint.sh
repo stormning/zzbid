@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 export TESSDATA_PREFIX=/usr/local/share
+export GIT_SSL_NO_VERIFY=true
 GIT_URL=git@github.com:stormning/zzbid.git
 ZZBID_SRC=/opt/zzbid/source
 if [[ -d $ZZBID_SRC ]];then
