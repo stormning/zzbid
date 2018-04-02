@@ -1,9 +1,9 @@
 ### 准备工作
 
 ``` bash
-make dir -p /opt/tesseract \
+mkdir /opt/tesseract \
 	&& cd /opt/tesseract \
-	&& wget https://raw.githubusercontent.com/stormning/zzbid/master/entrypoint.sh
+	&& wget https://raw.githubusercontent.com/stormning/zzbid/master/entrypoint.sh \
 	&& chmod +x /opt/tesseract/entrypoint.sh
 ```
 
