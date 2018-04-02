@@ -4,6 +4,7 @@
 make dir -p /opt/tesseract \
 	&& cd /opt/tesseract \
 	&& wget https://raw.githubusercontent.com/stormning/zzbid/master/entrypoint.sh
+	&& chmod +x /opt/tesseract/entrypoint.sh
 ```
 
 ### 运行docker镜像
