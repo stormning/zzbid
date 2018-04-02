@@ -3,6 +3,7 @@ package com.slyak.zzbid.model;
 import com.slyak.zzbid.util.Constants;
 import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -22,6 +23,7 @@ import java.util.Calendar;
 @Table(name = "t_config")
 @Data
 @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE, region = "cfg")
+@Slf4j
 public class Config {
     private static final String CONDITION_PATTERN = "(([0-1]\\d|2[0-3]):[0-5]\\d)-(([0-1]\\d|2[0-3]):[0-5]\\d)";
 
@@ -49,8 +51,11 @@ public class Config {
             } else {
                 String[] split = StringUtils.split(condition, '-');
                 int begin = measureStringDate(split[0]);
+                log.info("begin:{}", begin);
                 int end = measureStringDate(split[1]);
+                log.info("end:{}", end);
                 int now = measureNow();
+                log.info("now:{}", now);
                 //condition check
                 return now >= begin && now <= end;
             }
