@@ -112,5 +112,14 @@
         </plugins>
     </build>
 
+    <repositories>
+        <repository>
+            <id>sonatype</id>
+            <name>sonatype Release Repository</name>
+            <url>
+                https://oss.sonatype.org/content/repositories/releases/
+            </url>
+        </repository>
+    </repositories>
 
 </project>
