@@ -14,5 +14,5 @@ if [ -f $ZZBID_SRC/pom.xml ];then
     git clone $GIT_URL .
     git remote add origin $GIT_URL
 fi
-$ZZBID_SRC/mvnw clean install
-$ZZBID_SRC/mvnw spring-boot:run
+$ZZBID_SRC/mvnw clean install -Dmaven.test.skip=true
+$ZZBID_SRC/mvnw spring-boot:run -Dmaven.test.skip=true
