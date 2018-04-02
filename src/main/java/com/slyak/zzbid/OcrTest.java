@@ -1,14 +1,8 @@
 package com.slyak.zzbid;
 
 import com.google.common.collect.Sets;
-import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
-import org.im4java.core.IM4JavaException;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
@@ -25,7 +19,7 @@ public class OcrTest {
     //and not in unsafe
     Set<String> unsafe = Sets.newHashSet("Q", "V", "Y", "6", "G");
 
-    public static void main(String[] args) throws TesseractException, IOException, IM4JavaException, InterruptedException {
+    public static void main(String[] args) throws TesseractException, IOException, InterruptedException {
         /*Tesseract instance = new Tesseract();
         instance.setLanguage("zzbid");
         for (int i = 0; i <= 10; i++) {
