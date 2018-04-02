@@ -12,6 +12,7 @@ import javax.persistence.*;
 import javax.validation.constraints.Digits;
 import java.math.BigDecimal;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * .
@@ -79,7 +80,7 @@ public class Config {
     }
 
     private static int measureNow() {
-        Calendar instance = Calendar.getInstance();
+        Calendar instance = Calendar.getInstance(TimeZone.getTimeZone("Asia/Shanghai"));
         int hour = instance.get(Calendar.HOUR_OF_DAY);
         int min = instance.get(Calendar.MINUTE);
         return hour * 100 + min;
