@@ -7,6 +7,7 @@ if [ -f $ZZBID_SRC/pom.xml ];then
     echo "start resetting ..."
     cd $ZZBID_SRC
     git reset --hard origin/master
+    git pull
     else
     echo "start cloning ..."
     cd $ZZBID_SRC
