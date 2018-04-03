@@ -129,10 +129,12 @@ public class BidService {
     }
 
     private void doBidUntilSuccess(String sessionId, Map<String, String> bidData) throws IOException, TesseractException {
-        bidData.put("returncodetijiao", OcrUtils.doOcr(getCaptcha(sessionId)));
-        Document document = crawlerService.fetchDocument(sessionId, saveBidUrl, HttpMethod.POST, null, bidData);
-        if (document.toString().contains("验证码错误")) {
-            doBidUntilSuccess(sessionId, bidData);
+        synchronized (this) {
+            bidData.put("returncodetijiao", OcrUtils.doOcr(getCaptcha(sessionId)));
+            Document document = crawlerService.fetchDocument(sessionId, saveBidUrl, HttpMethod.POST, null, bidData);
+            if (document.toString().contains("验证码错误")) {
+                doBidUntilSuccess(sessionId, bidData);
+            }
         }
     }
 
