@@ -22,10 +22,10 @@ public class CrawlerUtil {
                 .cookie("ASPSESSIONIDSQHDAQRQ", sessionid)
                 .ignoreContentType(true)
                 .method(Connection.Method.GET).timeoutMillis(30000).execute();*/
-        JsoupCrawlerService crawlerService = new JsoupCrawlerService();
-        String sessionId = crawlerService.initSession("http://st.zzint.com/login.jsp");
-
-        crawlerService.getCaptcha(sessionId, "http://st.zzint.com/vcode.action");
+//        JsoupCrawlerService crawlerService = new JsoupCrawlerService();
+//        String sessionId = crawlerService.initSession("http://st.zzint.com/login.jsp");
+//
+//        crawlerService.getCaptcha(sessionId, "http://st.zzint.com/vcode.action");
     }
 
 }

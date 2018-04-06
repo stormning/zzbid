@@ -1,5 +1,7 @@
 package com.slyak.zzbid.util;
 
+import lombok.extern.slf4j.Slf4j;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -13,6 +15,7 @@ import java.io.InputStream;
  * @author stormning 2018/4/2
  * @since 1.3.0
  */
+@Slf4j
 public class ImageCleaner {
 
     public static BufferedImage cleanImage(byte[] bytes) throws IOException {
@@ -20,6 +23,9 @@ public class ImageCleaner {
     }
 
     public static BufferedImage cleanImage(InputStream is) throws IOException {
+        if (is == null || is.available() == 0) {
+            return null;
+        }
         BufferedImage img = ImageIO.read(is);
         int width = img.getWidth();
         int height = img.getHeight();

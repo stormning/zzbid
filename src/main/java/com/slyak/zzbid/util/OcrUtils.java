@@ -1,5 +1,6 @@
 package com.slyak.zzbid.util;
 
+import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 import org.apache.commons.lang.StringUtils;
@@ -14,6 +15,7 @@ import java.io.InputStream;
  * @author stormning 2018/4/2
  * @since 1.3.0
  */
+@Slf4j
 public class OcrUtils {
 
     private OcrUtils() {
@@ -30,8 +32,13 @@ public class OcrUtils {
     }
 
     public static String doOcr(BufferedImage image) throws IOException, TesseractException {
+        if (image == null) {
+            return null;
+        }
         Tesseract instance = new Tesseract();
         instance.setLanguage(LANG);
-        return StringUtils.deleteWhitespace(instance.doOCR(image));
+        String result = StringUtils.deleteWhitespace(instance.doOCR(image));
+        log.info("Ocr result is : {}", result);
+        return result;
     }
 }

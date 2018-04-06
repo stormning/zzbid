@@ -1,5 +1,6 @@
 package com.slyak.zzbid.config;
 
+import com.google.common.collect.Sets;
 import com.slyak.support.crawler.CrawlerService;
 import com.slyak.support.crawler.impl.JsoupCrawlerService;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,18 +29,22 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class BidConfig {
 
-    private static final String extraInvalidUrl = "http://st.zzint.com/index.jsp";
+    private static final Set<String> extraInvalidUrls
+            = Sets.newHashSet("http://st.zzint.com/login.jsp", "http://st.zzint.com/index.jsp", "http://st.zzint.com/login.action");
+
 
     private static final String licValidUrl = "http://www.slyak.com/license?key=zzbid";
 
     @Bean
     public CrawlerService<Document> crawlerService() {
-        return new JsoupCrawlerService() {
+        JsoupCrawlerService crawlerService = new JsoupCrawlerService() {
             @Override
-            protected boolean isSessionValid(String initUrl, Connection.Response response) {
-                return super.isSessionValid(initUrl, response) && !StringUtils.equals(extraInvalidUrl, response.url().toString());
+            protected boolean isSessionValid(Connection.Response response) {
+                return !extraInvalidUrls.contains(response.url().toString());
             }
         };
+        crawlerService.setTimeoutMillis(4000);
+        return crawlerService;
     }
 
 
@@ -62,7 +68,7 @@ public class BidConfig {
             executorService.scheduleWithFixedDelay(() -> {
                 try {
                     Document document = crawlerService.fetchDocument(licValidUrl, HttpMethod.GET, null, null);
-                    if (!BooleanUtils.toBoolean(StringUtils.trim(document.text()))){
+                    if (!BooleanUtils.toBoolean(StringUtils.trim(document.text()))) {
                         log.error("Invalid license, please contact seller");
                         System.exit(0);
                     }

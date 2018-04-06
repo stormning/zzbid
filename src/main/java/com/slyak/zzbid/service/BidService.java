@@ -1,6 +1,9 @@
 package com.slyak.zzbid.service;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Maps;
+import com.slyak.concurrent.ExecutorUtils;
 import com.slyak.support.crawler.CrawlerService;
 import com.slyak.zzbid.model.Bid;
 import com.slyak.zzbid.model.Config;
@@ -8,6 +11,7 @@ import com.slyak.zzbid.repository.BidRepository;
 import com.slyak.zzbid.repository.ConfigRepository;
 import com.slyak.zzbid.util.Constants;
 import com.slyak.zzbid.util.OcrUtils;
+import com.slyak.zzbid.util.Speed;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.TesseractException;
@@ -21,10 +25,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpMethod;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * .
@@ -36,6 +45,8 @@ import java.util.Map;
 @Slf4j
 public class BidService {
 
+    private static ExecutorService executorService = Executors.newFixedThreadPool(10);
+
     @Autowired
     private CrawlerService<Document> crawlerService;
 
@@ -44,6 +55,8 @@ public class BidService {
 
     @Autowired
     private ConfigRepository configRepository;
+
+    private int maxBidSessionCount = 2;
 
     private static final String initUrl = "http://st.zzint.com/login.jsp";
 
@@ -59,25 +72,50 @@ public class BidService {
 
     private static final String logoutUrl = "http://st.zzint.com/loginOut!exit.action";
 
+    private static final String snapshotUrl = "http://st.zzint.com/pur!queryBid.action?packageId=%s";
+
+    //bidId->sessionId
+    private static final Map<String, String> BID_SESSION_CACHE = Maps.newConcurrentMap();
+
+    private Cache<String, Document> documentCache = Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
+
+    private static final String DOC_KEY = "doc";
+
     public void autoBid() {
-        loginCheck();
+        initSessions();
         //http://st.zzint.com/pur!queryBidList.action
         ///pur!showBid.action?packageId=2378
         ///pur!addBid.action
-        List<String> sessionIds = crawlerService.getInitUrlSessions(initUrl);
-        if (sessionIds.size() == 0) return;
-        String sessionId = sessionIds.get(0);
-        Document document = crawlerService.fetchDocument(sessionId, bidListUrl, HttpMethod.GET, null, null);
+        Speed fetchList = Speed.init("fetchList");
+        List<String> sessionIds = crawlerService.getUrlLoginSessions(initUrl);
+        log.info("sessionIds to crawl {}", sessionIds);
+
+        Document document = documentCache.getIfPresent(DOC_KEY);
+        if (document == null) {
+            Document fetched = crawlerService.fetchDocument(sessionIds, bidListUrl, HttpMethod.GET, null, null);
+            if (fetched != null && fetched.toString().contains("正在投标")) {
+                document = fetched;
+                documentCache.put(DOC_KEY, document);
+            }
+        }
+        if (document == null) {
+            return;
+        }
+
+        fetchList.spent();
+
+        Speed doBid = Speed.init("doBid");
         document.body().select("tr:gt(1)").forEach(element -> {
             String html = element.html();
             if (html.indexOf("正在投标") > 0) {
+                //cache the document
                 //parse again to avoid id mixed with html
                 String id = Jsoup.parse(element.child(0).text()).text();
-                Bid exist = bidRepository.findOne(id);
-                if (exist == null) {
+                Bid bid = bidRepository.findOne(id);
+                if (bid == null) {
                     String bidInfoUrl = element.select("td:last-child a:last-child").get(0).absUrl("href");
                     log.info("Url for bid : {}", bidInfoUrl);
-                    Bid bid = new Bid();
+                    bid = new Bid();
                     bid.setId(id);
                     String realPkgId = bidInfoUrl.substring(bidInfoUrl.indexOf("=") + 1);
                     bid.setRealPkgId(realPkgId);
@@ -86,22 +124,49 @@ public class BidService {
                     bid.setStartTime(element.child(3).text());
                     bid.setEndTime(element.child(4).text());
                     bid.setBudget(element.child(5).text());
+                    bid.setTaskTime(System.currentTimeMillis());
                     bidRepository.save(bid);
-                    doBid(sessionId, bid);
-                } else if (exist.getBidTime() <= 0) {
-                    doBid(sessionId, exist);
+                }
+                if (bid.getBidTime() <= 0) {
+//                    doBid(assignSessionId(id), bid);
                 }
             }
         });
+        doBid.spent();
+    }
+
+    private String assignSessionId(String bidId) {
+        return BID_SESSION_CACHE.computeIfAbsent(bidId, bidId1 -> findUnusedSession());
     }
 
     @SneakyThrows
-    private void loginCheck() {
-        if (!isLogin()) {
-            String sessionId = nextSessionId();
-            byte[] captcha = getCaptcha(sessionId);
-            login(sessionId, OcrUtils.doOcr(captcha));
+    public String findUnusedSession() {
+        List<String> sessions = crawlerService.getUrlLoginSessions(initUrl);
+        for (String session : sessions) {
+            if (!BID_SESSION_CACHE.containsValue(session)) {
+                return session;
+            }
         }
+        Thread.sleep(50);
+        return findUnusedSession();
+    }
+
+    private void initSessions() {
+        Speed speed = Speed.init("initSessions");
+        List<String> sessions = crawlerService.getUrlLoginSessions(initUrl);
+        //确保有一个session
+        if (CollectionUtils.isEmpty(sessions)) {
+            synchronized (this) {
+                if (CollectionUtils.isEmpty(sessions)) {
+                    Boolean result = ExecutorUtils.startCompetition((index) -> {
+                        login(nextSessionId());
+                        return true;
+                    }, maxBidSessionCount, 5000);
+                    log.info("init sessions result : {}", result);
+                }
+            }
+        }
+        speed.spent();
     }
 
     @Async
@@ -123,21 +188,19 @@ public class BidService {
             doBidUntilSuccess(sessionId, bidData);
             bid.setBidTime(System.currentTimeMillis());
             bidRepository.save(bid);
+            BID_SESSION_CACHE.remove(bid.getId());
         } catch (Exception e) {
             log.error("Exception occurred:", e);
         }
     }
 
     private void doBidUntilSuccess(String sessionId, Map<String, String> bidData) throws IOException, TesseractException {
-        synchronized (this) {
-            bidData.put("returncodetijiao", OcrUtils.doOcr(getCaptcha(sessionId)));
-            Document document = crawlerService.fetchDocument(sessionId, saveBidUrl, HttpMethod.POST, null, bidData);
-            if (document.toString().contains("验证码错误")) {
-                doBidUntilSuccess(sessionId, bidData);
-            }
+        bidData.put("returncodetijiao", getCaptcha(sessionId));
+        Document document = crawlerService.fetchDocument(sessionId, saveBidUrl, HttpMethod.POST, null, bidData);
+        if (document.toString().contains("验证码错误")) {
+            doBidUntilSuccess(sessionId, bidData);
         }
     }
-
 
     private String text(Element element, String selector) {
         return StringUtils.trim(element.select(selector).text());
@@ -152,36 +215,57 @@ public class BidService {
         return config == null ? new Config() : config;
     }
 
-    public boolean isLogin() {
-        return crawlerService.isLogin(initUrl);
-    }
-
     public Config saveConfig(Config config) {
         return configRepository.save(config);
     }
 
-    public byte[] getCaptcha(String sessionId) {
-        return crawlerService.getCaptcha(sessionId, captchaUrl);
+    public String getCaptcha(String sessionId) {
+        BufferedInputStream is = crawlerService.getCaptcha(sessionId, captchaUrl);
+        try {
+            String code = OcrUtils.doOcr(is);
+            if (isCodeValid(code)) {
+                return code;
+            } else {
+                return getCaptcha(sessionId);
+            }
+        } catch (Exception e) {
+            return getCaptcha(sessionId);
+        }
     }
 
-    public void login(String sessionId, String captcha) {
+    private boolean isCodeValid(String code) {
+        if (code != null && code.length() == 4) {
+            for (int i = 0; i < code.length(); i++) {
+                char c = code.charAt(i);
+                if (!((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+
+    public void login(String sessionId) {
         Config config = getConfig();
         Map<String, String> data = Maps.newHashMap();
         data.put("userName", config.getName());
         data.put("password", config.getPassword());
-        data.put("vcode", captcha);
-        crawlerService.login(sessionId, loginActionUrl, data);
+        data.put("vcode", getCaptcha(sessionId));
+        boolean login = crawlerService.login(sessionId, loginActionUrl, data);
+        if (!login) {
+            log.info("try to re login , session id {}", sessionId);
+            login(nextSessionId());
+        }
     }
 
     public String nextSessionId() {
-        if (crawlerService.isLogin(initUrl)) {
-            return "";
-        }
         return crawlerService.initSession(initUrl);
     }
 
     public void logout() {
-        List<String> sessionIds = crawlerService.getInitUrlSessions(initUrl);
+        List<String> sessionIds = crawlerService.getUrlLoginSessions(initUrl);
         if (sessionIds.size() > 0) {
             for (String sessionId : sessionIds) {
                 crawlerService.fetchDocument(sessionId, logoutUrl, HttpMethod.GET, null, null);

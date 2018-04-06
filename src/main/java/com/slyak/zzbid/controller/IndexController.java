@@ -33,17 +33,17 @@ public class IndexController {
         return "index";
     }
 
-    @GetMapping("/captcha/{sessionId}")
+/*    @GetMapping("/captcha/{sessionId}")
     @ResponseBody
     public byte[] captcha(@PathVariable String sessionId) {
         return bidService.getCaptcha(sessionId);
-    }
+    }*/
 
-    @PostMapping("/startBid")
+/*    @PostMapping("/startBid")
     public String startBid(String sessionId, String captcha) {
         bidService.login(sessionId, captcha);
         return "redirect:/";
-    }
+    }*/
 
     @RequestMapping("/nextSessionId")
     @ResponseBody

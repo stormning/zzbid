@@ -4,6 +4,7 @@ import lombok.Data;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -41,6 +42,13 @@ public class Bid {
     //预算
     private String budget;
 
+    //任务开始时间
+    private long taskTime = 0;
+
     //自动投标时间
     private long bidTime = 0;
+
+    //投标快照
+    @Column
+    private String snapshot;
 }
