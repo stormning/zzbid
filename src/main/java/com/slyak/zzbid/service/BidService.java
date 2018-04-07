@@ -192,6 +192,7 @@ public class BidService {
             BID_SESSION_CACHE.remove(bid.getId());
         } catch (Exception e) {
             log.error("Exception occurred:", e);
+            BID_SESSION_CACHE.remove(bid.getId());
         }
     }
 
