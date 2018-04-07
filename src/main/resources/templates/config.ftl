@@ -17,7 +17,7 @@
     <div class="form-group row">
         <label for="password" class="col-sm-2 col-form-label">密码</label>
         <div class="col-sm-6">
-            <input id="password" type="text" class="form-control validate[required]" placeholder="请输入密码" name="password" value="${config.password}" autocomplete="off">
+            <input id="password" type="password" class="form-control validate[required]" placeholder="请输入密码" name="password" value="${config.password}" autocomplete="off">
         </div>
     </div>
     <div class="form-group row">
