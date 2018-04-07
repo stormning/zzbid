@@ -127,7 +127,7 @@
         </plugins>
     </build>
 
-    <!--<repositories>
+    <repositories>
         <repository>
             <id>sonatype</id>
             <name>sonatype Release Repository</name>
@@ -135,6 +135,6 @@
                 https://oss.sonatype.org/content/repositories/releases/
             </url>
         </repository>
-    </repositories>-->
+    </repositories>
 
 </project>
