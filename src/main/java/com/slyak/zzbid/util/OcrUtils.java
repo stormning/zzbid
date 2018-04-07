@@ -31,7 +31,9 @@ public class OcrUtils {
         try {
             return doOcr(ImageCleaner.cleanImage(is));
         } finally {
-            is.close();
+            if (is != null) {
+                is.close();
+            }
         }
     }
 
