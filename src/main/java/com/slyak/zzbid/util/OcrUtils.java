@@ -28,7 +28,11 @@ public class OcrUtils {
     }
 
     public static String doOcr(InputStream is) throws IOException, TesseractException {
-        return doOcr(ImageCleaner.cleanImage(is));
+        try {
+            return doOcr(ImageCleaner.cleanImage(is));
+        } finally {
+            is.close();
+        }
     }
 
     public static String doOcr(BufferedImage image) throws IOException, TesseractException {

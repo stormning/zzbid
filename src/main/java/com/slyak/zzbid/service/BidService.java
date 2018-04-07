@@ -56,9 +56,11 @@ public class BidService {
     @Autowired
     private ConfigRepository configRepository;
 
-    private int maxBidSessionCount = 2;
+    private int maxBidSessionCount = 5;
 
-    private static final String initUrl = "http://st.zzint.com/login.jsp";
+    //    private static final String initUrl = "http://st.zzint.com/login.jsp";
+    private static final String initUrl = "http://st.zzint.com/vcode.action";
+
 
     private static final String loginActionUrl = "http://st.zzint.com/login.action";
 
@@ -101,7 +103,6 @@ public class BidService {
         if (document == null) {
             return;
         }
-
         fetchList.spent();
 
         Speed doBid = Speed.init("doBid");
@@ -128,7 +129,7 @@ public class BidService {
                     bidRepository.save(bid);
                 }
                 if (bid.getBidTime() <= 0) {
-//                    doBid(assignSessionId(id), bid);
+                    doBid(assignSessionId(id), bid);
                 }
             }
         });
@@ -136,7 +137,7 @@ public class BidService {
     }
 
     private String assignSessionId(String bidId) {
-        return BID_SESSION_CACHE.computeIfAbsent(bidId, bidId1 -> findUnusedSession());
+        return BID_SESSION_CACHE.computeIfAbsent(bidId, bid -> findUnusedSession());
     }
 
     @SneakyThrows
