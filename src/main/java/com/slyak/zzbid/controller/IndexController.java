@@ -8,7 +8,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * .
@@ -33,6 +36,13 @@ public class IndexController {
         return "index";
     }
 
+    @RequestMapping("/snapshot")
+    public void snapshot(String id, ModelMap modelMap) {
+        bidService.initSessions();
+        modelMap.put("snapshot", bidService.getSnaphostById(id));
+    }
+
+
 /*    @GetMapping("/captcha/{sessionId}")
     @ResponseBody
     public byte[] captcha(@PathVariable String sessionId) {
@@ -45,11 +55,11 @@ public class IndexController {
         return "redirect:/";
     }*/
 
-    @RequestMapping("/nextSessionId")
+/*    @RequestMapping("/nextSessionId")
     @ResponseBody
     public String nextSessionId() {
         return bidService.nextSessionId();
-    }
+    }*/
 
     @GetMapping("/config")
     public void config() {

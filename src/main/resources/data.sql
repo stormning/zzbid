@@ -1,0 +1,1 @@
+alter table t_bid modify column snapshot varchar(3000);

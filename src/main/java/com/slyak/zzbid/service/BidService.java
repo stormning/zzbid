@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Maps;
 import com.slyak.concurrent.ExecutorUtils;
-import com.slyak.support.crawler.CrawlerService;
+import com.slyak.web.support.crawler.CrawlerService;
 import com.slyak.zzbid.model.Bid;
 import com.slyak.zzbid.model.Config;
 import com.slyak.zzbid.repository.BidRepository;
@@ -74,7 +74,7 @@ public class BidService {
 
     private static final String logoutUrl = "http://st.zzint.com/loginOut!exit.action";
 
-    private static final String snapshotUrl = "http://st.zzint.com/pur!queryBid.action?packageId=%s";
+    private static final String snapshotUrl = "http://st.zzint.com/pur!queryBid.action";
 
     //bidId->sessionId
     private static final Map<String, String> BID_SESSION_CACHE = Maps.newConcurrentMap();
@@ -152,7 +152,7 @@ public class BidService {
         return findUnusedSession();
     }
 
-    private void initSessions() {
+    public void initSessions() {
         Speed speed = Speed.init("initSessions");
         List<String> sessions = crawlerService.getUrlLoginSessions(initUrl);
         //确保有一个session
@@ -190,10 +190,36 @@ public class BidService {
             bid.setBidTime(System.currentTimeMillis());
             bidRepository.save(bid);
             BID_SESSION_CACHE.remove(bid.getId());
+            updateSnapshot(bid);
         } catch (Exception e) {
             log.error("Exception occurred:", e);
             BID_SESSION_CACHE.remove(bid.getId());
         }
+    }
+
+    @Async
+    public void updateSnapshot(Bid bid) {
+        String snapshot = getSnapshotByBid(bid);
+        bid.setSnapshot(snapshot);
+        bidRepository.save(bid);
+    }
+
+    @SneakyThrows
+    public String getSnapshotByBid(Bid bid) {
+        List<String> sessions = crawlerService.getUrlLoginSessions(initUrl);
+        if (CollectionUtils.isEmpty(sessions)) {
+            Thread.sleep(100);
+            return getSnapshotByBid(bid);
+        }
+        String sessionId = sessions.get(sessions.size() - 1);
+        Map<String, String> data = Maps.newHashMap();
+        data.put("packageId", bid.getRealPkgId());
+        Document document = crawlerService.fetchDocument(sessionId, snapshotUrl, HttpMethod.GET, null, data);
+        return document.select("table").get(1).toString();
+    }
+
+    public String getSnaphostById(String id) {
+        return getSnapshotByBid(bidRepository.findOne(id));
     }
 
     private void doBidUntilSuccess(String sessionId, Map<String, String> bidData) throws IOException, TesseractException {

@@ -1,6 +1,6 @@
 package com.slyak.zzbid.interceptor;
 
-import com.slyak.util.WebUtils;
+import com.slyak.web.util.WebUtils;
 import com.slyak.zzbid.model.Config;
 import com.slyak.zzbid.service.BidService;
 import org.springframework.beans.factory.annotation.Autowired;

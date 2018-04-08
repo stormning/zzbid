@@ -7,5 +7,5 @@
 [#-- @ftlroot "" --]
 [#import 'layout.ftl' as layout]
 [#import '/spring.ftl' as spring]
-[#import '/com/slyak/support/freemarker/slyak.ftl' as slyak]
-[#import '/com/slyak/support/freemarker/bootstrap/bootstrap.ftl' as bootstrap]
+[#import '/com/slyak/web/support/freemarker/slyak.ftl' as slyak]
+[#import '/com/slyak/web/support/freemarker/bootstrap/bootstrap.ftl' as bootstrap]

@@ -1,8 +1,8 @@
 package com.slyak.zzbid.config;
 
 import com.google.common.collect.Sets;
-import com.slyak.support.crawler.CrawlerService;
-import com.slyak.support.crawler.impl.JsoupCrawlerService;
+import com.slyak.web.support.crawler.CrawlerService;
+import com.slyak.web.support.crawler.impl.JsoupCrawlerService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;

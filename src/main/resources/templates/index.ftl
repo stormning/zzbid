@@ -4,14 +4,42 @@
 <@layout.main tab=0>
 <h4>自动投标记录</h4>
 <hr>
-<table class="table" style="font-size: 12px">
+<style>
+    .modal-dialog{
+        font-size: 14px !important;
+    }
+    .table th, .table td {
+        text-align: center;
+        vertical-align: middle!important;
+    }
+
+    .table td{
+        font-size: 14px;
+    }
+</style>
+<script>
+    function showSnapshot(modal, btn) {
+        return $("#snapshot" + btn.data("id")).html();
+    }
+    function showCurrent(modal, btn) {
+        var result;
+        $.get({
+            url: "/snapshot?id=" + btn.data("id"),
+            async: false,
+            success: function (res) {
+                result = res;
+            }
+        });
+        return result;
+    }
+</script>
+<table class="table">
     <thead class="thead-light">
     <tr>
         <th scope="col">分包编号</th>
         <th scope="col">类别</th>
         <th scope="col">单位</th>
-        <th scope="col">任务开始时间</th>
-        <th scope="col">自动投标时间</th>
+        <th scope="col">投标状态</th>
         <th scope="col">投标快照</th>
         <th scope="col">目前情况</th>
     </tr>
@@ -19,15 +47,29 @@
     <tbody>
         <#list page.content as bid>
         <tr>
-            <th scope="row">${bid.id}</th>
-            <td>${bid.firstType}</td>
+            <td>${bid.id}</td>
+            <td>${bid.firstType?split(" ")?join("</br>")}</td>
             <td>${bid.dept}</td>
-            <td><#if bid.taskTime gt 0>${bid.taskTime?number_to_date?string("HH:mm:ss")}</#if></td>
-            <td><#if bid.bidTime gt 0>${bid.bidTime?number_to_date?string("HH:mm:ss")}</#if></td>
-            <td><#--${bid.snapshot}-->建设中</td>
-            <td><#--${bid.snapshot}-->建设中</td>
+            <td>
+                <#if bid.bidTime gt 0>
+                    已投</br>耗时${(bid.bidTime-bid.taskTime)?number_to_date?string("ss秒SSS毫秒")}
+                    <#else >
+                        未投
+                </#if>
+            </td>
+            <td>
+                <button type="button" class="btn btn-link btn-sm" data-toggle="modal" data-target="#snapshotModal"
+                        data-id="${bid.id}">查看投标快照
+                </button>
+                <div class="d-none" id="snapshot${bid.id}">${bid.snapshot}</div>
+            </td>
+            <td><button type="button" class="btn btn-link btn-sm" data-toggle="modal" data-target="#currentModal"
+                        data-id="${bid.id}">目前情况
+            </button></td>
         </tr>
         </#list>
+        <@bootstrap.model id="snapshotModal" title="投标快照" onShown='showSnapshot'/>
+        <@bootstrap.model id="currentModal" title="目前情况" onShown='showCurrent'/>
     </tbody>
 </table>
     <@bootstrap.pagination relativeUrl='/' showNumber=2 value=page classes=["justify-content-center"]/>

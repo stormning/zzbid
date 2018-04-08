@@ -49,6 +49,6 @@ public class Bid {
     private long bidTime = 0;
 
     //投标快照
-    @Column
+    @Column(length = 3000)
     private String snapshot;
 }

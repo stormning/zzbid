@@ -1,6 +1,5 @@
 package com.slyak.zzbid.util;
 
-import com.slyak.support.crawler.impl.JsoupCrawlerService;
 import org.jsoup.Jsoup;
 
 /**
