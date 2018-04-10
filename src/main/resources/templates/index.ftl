@@ -52,7 +52,7 @@
             <td>${bid.dept}</td>
             <td>
                 <#if bid.bidTime gt 0>
-                    已投</br>耗时${(bid.bidTime-bid.taskTime)?number_to_date?string("ss秒SSS毫秒")}
+                    已投<#--</br>耗时${(bid.bidTime-bid.taskTime)?number_to_date?string("ss秒SSS毫秒")}-->
                     <#else >
                         未投
                 </#if>
