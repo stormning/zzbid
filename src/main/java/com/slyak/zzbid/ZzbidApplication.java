@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.TesseractException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
@@ -20,6 +21,7 @@ import java.io.IOException;
 @EnableScheduling
 @EnableAsync
 @Slf4j
+@EnableCaching
 public class ZzbidApplication {
 
     private static final ResourceLoader RESOURCE_LOADER = new DefaultResourceLoader();

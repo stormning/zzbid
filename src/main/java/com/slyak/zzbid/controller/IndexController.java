@@ -8,10 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * .
@@ -42,6 +39,13 @@ public class IndexController {
         modelMap.put("snapshot", bidService.getSnaphostById(id));
     }
 
+
+    @RequestMapping("/clear")
+    @ResponseBody
+    public String clear(String id, ModelMap modelMap) {
+        bidService.clear();
+        return "ok";
+    }
 
 /*    @GetMapping("/captcha/{sessionId}")
     @ResponseBody

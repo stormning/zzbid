@@ -39,6 +39,7 @@
         <th scope="col">分包编号</th>
         <th scope="col">类别</th>
         <th scope="col">单位</th>
+        <th scope="col">入库时间</th>
         <th scope="col">投标状态</th>
         <th scope="col">投标快照</th>
         <th scope="col">目前情况</th>
@@ -50,9 +51,10 @@
             <td>${bid.id}</td>
             <td>${bid.firstType?split(" ")?join("</br>")}</td>
             <td>${bid.dept}</td>
+            <td>${bid.taskTime?number_to_date?string("hh:mm:ss:SSS")}</td>
             <td>
                 <#if bid.bidTime gt 0>
-                    已投<#--</br>耗时${(bid.bidTime-bid.taskTime)?number_to_date?string("ss秒SSS毫秒")}-->
+                    已投
                     <#else >
                         未投
                 </#if>

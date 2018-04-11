@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import net.sourceforge.tess4j.TesseractException;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -46,5 +47,10 @@ public class OcrTest {
             ImageIO.write(img, "jpeg", gray);
             System.out.println(i + "-" + instance.doOCR(gray));
         }*/
+        System.out.println(new Date(1523408366089L));
+        System.out.println(new Date(1523408427826L));
+
+        System.out.println(new Date(1523408406256L));
+        System.out.println(new Date(1523408430769L));
     }
 }

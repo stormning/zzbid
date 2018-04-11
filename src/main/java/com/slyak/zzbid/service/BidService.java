@@ -31,8 +31,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -45,8 +43,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class BidService {
 
-    private static ExecutorService executorService = Executors.newFixedThreadPool(10);
-
     @Autowired
     private CrawlerService<Document> crawlerService;
 
@@ -56,7 +52,7 @@ public class BidService {
     @Autowired
     private ConfigRepository configRepository;
 
-    private int maxBidSessionCount = 5;
+    private int maxBidSessionCount = 3;
 
     //    private static final String initUrl = "http://st.zzint.com/login.jsp";
     private static final String initUrl = "http://st.zzint.com/vcode.action";
@@ -79,61 +75,64 @@ public class BidService {
     //bidId->sessionId
     private static final Map<String, String> BID_SESSION_CACHE = Maps.newConcurrentMap();
 
-    private Cache<String, Document> documentCache = Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
+    private Cache<String, Document> documentCache = Caffeine.newBuilder().expireAfterWrite(500, TimeUnit.MILLISECONDS).build();
 
     private static final String DOC_KEY = "doc";
 
     public void autoBid() {
         initSessions();
-        //http://st.zzint.com/pur!queryBidList.action
-        ///pur!showBid.action?packageId=2378
-        ///pur!addBid.action
-        Speed fetchList = Speed.init("fetchList");
-        List<String> sessionIds = crawlerService.getUrlLoginSessions(initUrl);
-        log.info("sessionIds to crawl {}", sessionIds);
+        //async
+        initDocument();
+        startBid();
+    }
 
+    private void startBid() {
+        List<Bid> unbidBids = bidRepository.findUnbidBids();
+        if (!CollectionUtils.isEmpty(unbidBids)) {
+            for (Bid unbidBid : unbidBids) {
+                bidOne(assignSessionId(unbidBid.getId()), unbidBid);
+            }
+        }
+    }
+
+    @Async
+    public void initDocument() {
+        List<String> sessionIds = crawlerService.getUrlLoginSessions(initUrl);
+        if (CollectionUtils.isEmpty(sessionIds)) {
+            return;
+        }
         Document document = documentCache.getIfPresent(DOC_KEY);
         if (document == null) {
-            Document fetched = crawlerService.fetchDocument(sessionIds, bidListUrl, HttpMethod.GET, null, null);
-            if (fetched != null && fetched.toString().contains("正在投标")) {
-                document = fetched;
+            log.info("sessionIds to crawl {}", sessionIds);
+            document = crawlerService.fetchDocument(sessionIds, bidListUrl, HttpMethod.GET, null, null);
+            if (document != null && document.toString().contains("正在投标")) {
+                document.body().select("tr:gt(1)").forEach(element -> {
+                    String html = element.html();
+                    if (html.indexOf("正在投标") > 0) {
+                        //cache the document
+                        //parse again to avoid id mixed with html
+                        String id = Jsoup.parse(element.child(0).text()).text();
+                        Bid bid = bidRepository.findOne(id);
+                        if (bid == null) {
+                            String bidInfoUrl = element.select("td:last-child a:last-child").get(0).absUrl("href");
+                            log.info("Url for bid : {}", bidInfoUrl);
+                            bid = new Bid();
+                            bid.setId(id);
+                            String realPkgId = bidInfoUrl.substring(bidInfoUrl.indexOf("=") + 1);
+                            bid.setRealPkgId(realPkgId);
+                            bid.setFirstType(text(element, "td:eq(1)"));
+                            bid.setDept(element.child(2).text());
+                            bid.setStartTime(element.child(3).text());
+                            bid.setEndTime(element.child(4).text());
+                            bid.setBudget(element.child(5).text());
+                            bid.setTaskTime(System.currentTimeMillis());
+                            bidRepository.save(bid);
+                        }
+                    }
+                });
                 documentCache.put(DOC_KEY, document);
             }
         }
-        if (document == null) {
-            return;
-        }
-        fetchList.spent();
-
-        Speed doBid = Speed.init("doBid");
-        document.body().select("tr:gt(1)").forEach(element -> {
-            String html = element.html();
-            if (html.indexOf("正在投标") > 0) {
-                //cache the document
-                //parse again to avoid id mixed with html
-                String id = Jsoup.parse(element.child(0).text()).text();
-                Bid bid = bidRepository.findOne(id);
-                if (bid == null) {
-                    String bidInfoUrl = element.select("td:last-child a:last-child").get(0).absUrl("href");
-                    log.info("Url for bid : {}", bidInfoUrl);
-                    bid = new Bid();
-                    bid.setId(id);
-                    String realPkgId = bidInfoUrl.substring(bidInfoUrl.indexOf("=") + 1);
-                    bid.setRealPkgId(realPkgId);
-                    bid.setFirstType(text(element, "td:eq(1)"));
-                    bid.setDept(element.child(2).text());
-                    bid.setStartTime(element.child(3).text());
-                    bid.setEndTime(element.child(4).text());
-                    bid.setBudget(element.child(5).text());
-                    bid.setTaskTime(System.currentTimeMillis());
-                    bidRepository.save(bid);
-                }
-                if (bid.getBidTime() <= 0) {
-                    doBid(assignSessionId(id), bid);
-                }
-            }
-        });
-        doBid.spent();
     }
 
     private String assignSessionId(String bidId) {
@@ -153,7 +152,6 @@ public class BidService {
     }
 
     public void initSessions() {
-        Speed speed = Speed.init("initSessions");
         List<String> sessions = crawlerService.getUrlLoginSessions(initUrl);
         //确保有一个session
         if (CollectionUtils.isEmpty(sessions)) {
@@ -167,11 +165,12 @@ public class BidService {
                 }
             }
         }
-        speed.spent();
     }
 
     @Async
-    public void doBid(String sessionId, Bid bid) {
+    public void bidOne(String sessionId, Bid bid) {
+        log.info("bid {} with sessionId {}", bid.getId(), sessionId);
+        Speed bidOne = Speed.init("bidOne");
         try {
             ///http://st.zzint.com/pur!addBid.action?packageId
             Config config = getConfig();
@@ -191,10 +190,12 @@ public class BidService {
             bidRepository.save(bid);
             BID_SESSION_CACHE.remove(bid.getId());
             updateSnapshot(bid);
+
         } catch (Exception e) {
             log.error("Exception occurred:", e);
             BID_SESSION_CACHE.remove(bid.getId());
         }
+        bidOne.spent();
     }
 
     @Async
@@ -299,5 +300,9 @@ public class BidService {
                 crawlerService.fetchDocument(sessionId, logoutUrl, HttpMethod.GET, null, null);
             }
         }
+    }
+
+    public void clear() {
+        bidRepository.deleteAllInBatch();
     }
 }
