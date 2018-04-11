@@ -1,5 +1,6 @@
 package com.slyak.zzbid.controller;
 
+import com.slyak.web.support.crawler.exception.InvalidSessionException;
 import com.slyak.zzbid.model.Config;
 import com.slyak.zzbid.service.BidService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,8 +36,12 @@ public class IndexController {
 
     @RequestMapping("/snapshot")
     public void snapshot(String id, ModelMap modelMap) {
-        bidService.initSessions();
-        modelMap.put("snapshot", bidService.getSnaphostById(id));
+        try {
+            bidService.initSessions();
+            modelMap.put("snapshot", bidService.getSnaphostById(id));
+        } catch (InvalidSessionException e) {
+            snapshot(id, modelMap);
+        }
     }
 
 
