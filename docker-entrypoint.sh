@@ -15,4 +15,4 @@ if [ -f $ZZBID_SRC/pom.xml ];then
     git remote add origin $GIT_URL
 fi
 $ZZBID_SRC/mvnw clean install -Dmaven.test.skip=true
-$ZZBID_SRC/mvnw spring-boot:run -Dmaven.test.skip=true -Duser.timezone=Asia/Shanghai
+java -server -Xms1563M -Xmx1563M -Duser.timezone=Asia/Shanghai -jar $ZZBID_SRC/target/zzbid-0.0.1-SNAPSHOT.jar
