@@ -52,7 +52,7 @@ public class BidService {
     @Autowired
     private ConfigRepository configRepository;
 
-    private int maxBidSessionCount = 5;
+    private int maxBidSessionCount = 3;
 
     //    private static final String initUrl = "http://st.zzint.com/login.jsp";
     private static final String initUrl = "http://st.zzint.com/vcode.action";
