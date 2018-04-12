@@ -75,7 +75,7 @@ public class BidService {
     //bidId->sessionId
     private static final Map<String, String> BID_SESSION_CACHE = Maps.newConcurrentMap();
 
-    private Cache<String, Document> documentCache = Caffeine.newBuilder().expireAfterWrite(500, TimeUnit.MILLISECONDS).build();
+    private Cache<String, Document> documentCache = Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.SECONDS).build();
 
     private static final String DOC_KEY = "doc";
 
