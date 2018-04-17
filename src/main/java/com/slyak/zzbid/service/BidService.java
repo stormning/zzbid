@@ -187,6 +187,7 @@ public class BidService {
 
             doBidUntilSuccess(sessionId, bidData);
             bid.setBidTime(System.currentTimeMillis());
+            bid.setSnapshot(null);
             bidRepository.save(bid);
             BID_SESSION_CACHE.remove(bid.getId());
             updateSnapshot(bid);
